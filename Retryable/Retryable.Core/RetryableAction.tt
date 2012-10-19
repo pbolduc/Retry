@@ -1,0 +1,149 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ output extension=".Generated.cs" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+using System;
+
+namespace Retryable
+{
+    public static partial class RetryableAction
+    {
+<# for (var typeCount = 2; typeCount <= GenericTypeMax; typeCount++) 
+{
+    var typeList = GetGenericList(typeCount, GenericTypeFormat);
+	var argumentList = GetGenericList(typeCount, GenericArgumentFormat);
+	var argsList = GetGenericList(typeCount, GenericArgumentsFormat);
+#>
+        /// <summary>
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <typeparam name="T<#= typeIndex #>">The type of the <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</typeparam>
+<#
+	}
+
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <param name="arg<#= typeIndex #>">The <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</param>
+<#
+	}
+#>        /// <exception cref="ArgumentNullException">
+        /// <paramref name="action"/> or <paramref name="retryPolicy"/> is null.
+        /// </exception>
+        /// <returns></returns>
+        public static void Execute<<#= typeList #>>(Action<<#= typeList #>> action, RetryPolicy retryPolicy, <#= argumentList #>)
+		{
+            if (action == null)
+            {
+                throw new ArgumentNullException("action");
+            }
+
+            if (retryPolicy == null)
+            {
+                throw new ArgumentNullException("retryPolicy");
+            }
+
+            for (int i = 0; /*forever*/; i++)
+            {
+                try
+                {
+                    action(<#= argsList #>);
+                    return;
+                }
+                catch (Exception exception)
+                {
+                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception))
+                    {
+                        throw;
+                    }
+                }
+            }
+	    }
+
+        /// <summary>
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <typeparam name="T<#= typeIndex #>">The type of the <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</typeparam>
+<#
+	}
+#>        /// <typeparam name="TResult">The type of the return value of the function delegate.</typeparam>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <param name="arg<#= typeIndex #>">The <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</param>
+<#
+	}
+#>        /// <exception cref="ArgumentNullException">
+        /// <paramref name="function"/> or <paramref name="retryPolicy"/> is null.
+        /// </exception>
+        /// <returns></returns>
+        public static TResult Execute<<#= typeList #>, TResult>(Func<<#= typeList #>, TResult> function, RetryPolicy retryPolicy, <#= argumentList #>)
+        {
+            if (function == null)
+            {
+                throw new ArgumentNullException("function");
+            }
+
+            if (retryPolicy == null)
+            {
+                throw new ArgumentNullException("retryPolicy");
+            }
+
+            for (int i = 0; /*forever*/; i++)
+            {
+                try
+                {
+                    TResult result = function(<#= argsList #>);
+                    return result;
+                }
+                catch (Exception exception)
+                {
+                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception))
+                    {
+                        throw;
+                    }
+                }
+            }
+        }		
+<# } #>    }
+}
+
+<#+
+private const int GenericTypeMax = 16;
+private const int GenericTypeMin = 5;
+
+private const string GenericTypeFormat = "T{0}";
+private const string GenericArgumentFormat = "T{0} arg{0}";
+private const string GenericArgumentsFormat = "arg{0}";
+
+private static readonly string[] ordinalNumbers = new[] { "first", "second", "third", "fourth", "fifth", "sixth", "seventh", "eighth", "nineth", "tenth", "eleventh", "twelfth", "thirteenth", "fourteenth", "fifteenth", "sixteenth" };
+private static readonly string[] wordNumbers = new[] { "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve", "thirteen", "fourteen", "fifteen", "sixteen" };
+
+public static string ConvertToWord(int number)
+{
+	return wordNumbers[number - 1];
+}
+
+public static string ConvertToOrdinal(int number)
+{
+	return ordinalNumbers[number - 1];
+}
+
+private static string GetGenericList(int typeCount, string format, string separator = ", ")
+{
+	return string.Join(separator, Enumerable.Range(1, typeCount).Select(n => string.Format(format, n)).ToArray());
+}
+#>
