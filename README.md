@@ -2,7 +2,9 @@ Retry
 =====
 
 Library to assist implementing application retry logic.  RetryPolicy/ShouldRetry taken
-from Windows Azure SDK for .NET (https://github.com/WindowsAzure/azure-sdk-for-net)
+from Windows Azure SDK for .NET (https://github.com/WindowsAzure/azure-sdk-for-net).
+
+More samples will be added to the source code.
 
 Simple example with no retry:
 
