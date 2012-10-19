@@ -8,7 +8,7 @@ using System;
 
 namespace Retryable
 {
-    public static partial class RetryableAction
+    public static partial class Retry
     {
 <# for (var typeCount = 2; typeCount <= GenericTypeMax; typeCount++) 
 {

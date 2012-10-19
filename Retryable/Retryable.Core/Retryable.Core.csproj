@@ -41,19 +41,19 @@
   <ItemGroup>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BackoffPolicies.cs" />
-    <Compile Include="RetryableAction.cs" />
-    <Compile Include="RetryableAction.Generated.cs">
+    <Compile Include="Retry.cs" />
+    <Compile Include="Retry.Generated.cs">
       <AutoGen>True</AutoGen>
       <DesignTime>True</DesignTime>
-      <DependentUpon>RetryableAction.tt</DependentUpon>
+      <DependentUpon>Retry.tt</DependentUpon>
     </Compile>
     <Compile Include="RetryPolicy.cs" />
     <Compile Include="ShouldRetry.cs" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="RetryableAction.tt">
+    <None Include="Retry.tt">
       <Generator>TextTemplatingFileGenerator</Generator>
-      <LastGenOutput>RetryableAction.Generated.cs</LastGenOutput>
+      <LastGenOutput>Retry.Generated.cs</LastGenOutput>
     </None>
   </ItemGroup>
   <ItemGroup>

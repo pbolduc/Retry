@@ -2,7 +2,7 @@
 
 namespace Retryable
 {
-    public static partial class RetryableAction
+    public static partial class Retry
     {
         /// <summary>
         /// </summary>
