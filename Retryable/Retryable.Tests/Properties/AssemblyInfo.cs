@@ -5,11 +5,11 @@ using System.Runtime.InteropServices;
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
-[assembly: AssemblyTitle("Retryable.Core")]
+[assembly: AssemblyTitle("Retryable.Tests")]
 [assembly: AssemblyDescription("")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("")]
-[assembly: AssemblyProduct("Retryable.Core")]
+[assembly: AssemblyProduct("Retryable.Tests")]
 [assembly: AssemblyCopyright("Copyright © 2012")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
@@ -20,7 +20,7 @@ using System.Runtime.InteropServices;
 [assembly: ComVisible(false)]
 
 // The following GUID is for the ID of the typelib if this project is exposed to COM
-[assembly: Guid("7db5e04c-3b63-4d6c-aa88-c91ddc7c1a1b")]
+[assembly: Guid("99df3380-17e6-4a59-aaea-389bb9571c2e")]
 
 // Version information for an assembly consists of the following four values:
 //

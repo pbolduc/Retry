@@ -5,6 +5,7 @@
 <#@ import namespace="System.Text" #>
 <#@ import namespace="System.Collections.Generic" #>
 using System;
+using System.Threading;
 
 namespace Retryable
 {
@@ -16,6 +17,7 @@ namespace Retryable
 	var argumentList = GetGenericList(typeCount, GenericArgumentFormat);
 	var argsList = GetGenericList(typeCount, GenericArgumentsFormat);
 #>
+
         /// <summary>
         /// </summary>
         /// <param name="action">The action.</param>
@@ -38,7 +40,41 @@ namespace Retryable
         /// <paramref name="action"/> or <paramref name="retryPolicy"/> is null.
         /// </exception>
         /// <returns></returns>
+        /// <remarks>
+        /// This method will block the current thread while retrying.
+        /// </remarks>
         public static void Execute<<#= typeList #>>(Action<<#= typeList #>> action, RetryPolicy retryPolicy, <#= argumentList #>)
+        {
+		    Execute(action, retryPolicy, NeverCancelled, <#= argsList #>);
+		}
+
+        /// <summary>
+        /// </summary>
+        /// <param name="action">The action.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+        /// <param name="cancel">An event if set, will cancel waiting.</param>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <typeparam name="T<#= typeIndex #>">The type of the <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</typeparam>
+<#
+	}
+
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <param name="arg<#= typeIndex #>">The <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</param>
+<#
+	}
+#>        /// <exception cref="ArgumentNullException">
+        /// <paramref name="action"/> or <paramref name="retryPolicy"/> is null.
+        /// </exception>
+        /// <returns></returns>
+        /// <remarks>
+        /// This method will block the current thread while retrying.
+        /// </remarks>
+        public static void Execute<<#= typeList #>>(Action<<#= typeList #>> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, <#= argumentList #>)
 		{
             if (action == null)
             {
@@ -50,6 +86,11 @@ namespace Retryable
                 throw new ArgumentNullException("retryPolicy");
             }
 
+            if (cancel == null)
+            {
+                throw new ArgumentNullException("cancel");
+            }
+
             for (int i = 0; /*forever*/; i++)
             {
                 try
@@ -59,7 +100,7 @@ namespace Retryable
                 }
                 catch (Exception exception)
                 {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception))
+                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
                     {
                         throw;
                     }
@@ -90,7 +131,43 @@ namespace Retryable
         /// <paramref name="function"/> or <paramref name="retryPolicy"/> is null.
         /// </exception>
         /// <returns></returns>
+        /// <remarks>
+        /// This method will block the current thread while retrying.
+        /// </remarks>
         public static TResult Execute<<#= typeList #>, TResult>(Func<<#= typeList #>, TResult> function, RetryPolicy retryPolicy, <#= argumentList #>)
+        {
+		    TResult result = Execute(function, retryPolicy, NeverCancelled, <#= argsList #>);
+			return result;
+		}
+
+        /// <summary>
+        /// </summary>
+        /// <param name="function">The function.</param>
+        /// <param name="retryPolicy">The retry policy.</param>
+        /// <param name="cancel">An event if set, will cancel waiting.</param>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <typeparam name="T<#= typeIndex #>">The type of the <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</typeparam>
+<#
+	}
+#>        /// <typeparam name="TResult">The type of the return value of the function delegate.</typeparam>
+<#
+	for (var typeIndex = 1; typeIndex <= typeCount; typeIndex++)
+	{
+#>
+        /// <param name="arg<#= typeIndex #>">The <#= ConvertToOrdinal(typeIndex) #> parameter of the method that this delegate encapsulates.</param>
+<#
+	}
+#>        /// <exception cref="ArgumentNullException">
+        /// <paramref name="function"/> or <paramref name="retryPolicy"/> is null.
+        /// </exception>
+        /// <returns></returns>
+        /// <remarks>
+        /// This method will block the current thread while retrying.
+        /// </remarks>
+        public static TResult Execute<<#= typeList #>, TResult>(Func<<#= typeList #>, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, <#= argumentList #>)
         {
             if (function == null)
             {
@@ -102,6 +179,11 @@ namespace Retryable
                 throw new ArgumentNullException("retryPolicy");
             }
 
+            if (cancel == null)
+            {
+                throw new ArgumentNullException("cancel");
+            }
+
             for (int i = 0; /*forever*/; i++)
             {
                 try
@@ -111,7 +193,7 @@ namespace Retryable
                 }
                 catch (Exception exception)
                 {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception))
+                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
                     {
                         throw;
                     }

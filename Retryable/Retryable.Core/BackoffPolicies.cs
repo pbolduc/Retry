@@ -13,11 +13,14 @@ namespace Retryable
         /// </summary>
         /// <param name="retryCount">The retry count.</param>
         /// <param name="minimumDelay">The minimum delay.</param>
+        /// <param name="maximumDelay">The maximum delay.</param>
         /// <exception cref="ArgumentOutOfRangeException">
         /// <paramref name="retryCount"/>, <paramref name="minimumDelay"/> or
         /// <paramref name="maximumDelay"/> are less then zero.
         /// </exception>
-        /// <returns></returns>
+        /// <returns>
+        /// A randomized timeout value based on the retry count. 
+        /// </returns>
         public static TimeSpan RandomExponential(int retryCount, int minimumDelay, int maximumDelay)
         {
             if (retryCount < 0)
