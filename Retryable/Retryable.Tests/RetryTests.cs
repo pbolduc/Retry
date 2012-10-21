@@ -1,7 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 
 using Xunit;
 
@@ -10,114 +7,73 @@ namespace Retryable.Tests
     public class RetryTests
     {
         [Fact]
-        public void Execute()
+        public void ActionInvokeWithNoRetry()
         {
-            Actions actions = new Actions(0);
+            // arrange
+            Operations operations = new Operations(0);
 
+            Action action = operations.GetAction();
 
-            //actions.Action.Retry(RetryPolicies.NoRetry());
+            // act
+            action.InvokeWithRetry(RetryPolicies.NoRetry());
 
-            Assert.Equal(0, actions.ThrowCount);
-            Assert.Equal(1, actions.ExecuteCount);
+            // assert
+            Assert.Equal(0, operations.ThrowCount);
+            Assert.Equal(1, operations.ExecuteCount);
         }
-    }
 
-    public class FunctionRetryTests
-    {
         [Fact]
-        public void Execute()
+        public void FuncInvokeWithNoRetry()
         {
-            Functions functions = new Functions(0);
+            // arrange
+            Operations operations = new Operations(0);
 
-            Func<int> func = functions.Func<int>;
+            Func<int> func = operations.GetFunc<int>();
 
+            // act
             int result = func.InvokeWithRetry(RetryPolicies.NoRetry());
 
-            Assert.Equal(0, functions.ThrowCount);
-            Assert.Equal(1, functions.ExecuteCount);
-            Assert.Equal(0, result);
+            // assert
+            Assert.Equal(0, operations.ThrowCount);
+            Assert.Equal(1, operations.ExecuteCount);
         }
 
         [Fact]
         public void ExecuteWithThrow()
         {
-            Functions functions = new Functions(1);
+            // arrange
+            Operations operations = new Operations(1);
 
-            Func<int> func = functions.Func<int>;
-            
-            //Exception exception = Assert.Throws<Exception>(() => Retry.Retry(func, RetryPolicies.NoRetry()));
+            Func<int> func = operations.GetFunc<int>();
 
-            Assert.Equal(1, functions.ThrowCount);
-            Assert.Equal(1, functions.ExecuteCount);
+            Assert.ThrowsDelegate testCode = () =>
+                {
+                    func.InvokeWithRetry(RetryPolicies.NoRetry());
+                };
+
+            // act
+            Exception exception = Assert.Throws<Exception>(testCode);
+
+            // assert
+            Assert.Equal(string.Format(Operations.ExceptionMessageFormat, 1), exception.Message);
+            Assert.Equal(1, operations.ThrowCount);
+            Assert.Equal(1, operations.ExecuteCount);
         }
 
         [Fact]
         public void RandomExponentialTest()
         {
+            // arrange
             TimeSpan minimum = TimeSpan.FromSeconds(1);
             TimeSpan maximum = TimeSpan.FromSeconds(10);
+            TimeSpan delta = TimeSpan.FromSeconds(1);
 
-            for (int i = 0; i < 1000; i++)
-            {
-                TimeSpan value = BackoffPolicies.RandomExponential(0, minimum, maximum, TimeSpan.FromSeconds(1));
+            // act
+            TimeSpan value = BackoffPolicies.RandomExponential(0, minimum, maximum, delta);
 
-                Assert.True(minimum <= value);
-                Assert.True(value <= maximum);
-            }
-        }
-    }
-
-
-    public abstract class RetryBase
-    {
-        private int _throwCount;
-        private int _executeCount;
-
-        private int _failCount;
-
-        protected RetryBase(int failCount)
-        {
-            _executeCount = 0;
-            _failCount = failCount;          
-        }
-
-        public int ExecuteCount { get { return _executeCount; } }
-
-        public int ThrowCount { get { return _throwCount; } }
-
-        protected void Execute()
-        {
-            if (_executeCount++ < _failCount)
-            {
-                _throwCount++;
-                throw new Exception(string.Format("Executed {0} times", _executeCount));
-            }
-        }
-    }
-
-    public class Functions : RetryBase
-    {
-        public Functions(int failCount)
-            : base(failCount)
-        {            
-        }
-
-        public TReturn Func<TReturn>()
-        {
-            Execute();
-            return default(TReturn);
-        }
-    }
-
-    public class Actions : RetryBase
-    {
-        public Actions(int failCount) : base(failCount)
-        {
-        }
-
-        public Action GetAction()
-        {
-            return Execute;
+            // assert
+            Assert.True(minimum <= value);
+            Assert.True(value <= maximum);
         }
     }
 }
