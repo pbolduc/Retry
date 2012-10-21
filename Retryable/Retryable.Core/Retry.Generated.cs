@@ -1,9 +1,11 @@
 ﻿using System;
-using System.Threading;
+using System.Diagnostics.Contracts;
+using WaitEvent = System.Threading.ManualResetEventSlim;
+////using WaitEvent = System.Threading.ManualResetEvent;
 
 namespace Retryable
 {
-    public static partial class Retry
+    public static partial class RetryExtensions
     {
 
         /// <summary>
@@ -21,9 +23,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2>(Action<T1, T2> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2)
+        public static void InvokeWithRetry<T1, T2>(this Action<T1, T2> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2);
 		}
 
         /// <summary>
@@ -42,38 +47,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2>(Action<T1, T2> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2)
+        public static void InvokeWithRetry<T1, T2>(this Action<T1, T2> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -92,9 +73,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, TResult>(Func<T1, T2, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2)
+        public static TResult InvokeWithRetry<T1, T2, TResult>(this Func<T1, T2, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2);
 			return result;
 		}
 
@@ -115,38 +99,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, TResult>(Func<T1, T2, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2)
+        public static TResult InvokeWithRetry<T1, T2, TResult>(this Func<T1, T2, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -166,9 +126,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3>(Action<T1, T2, T3> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3)
+        public static void InvokeWithRetry<T1, T2, T3>(this Action<T1, T2, T3> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3);
 		}
 
         /// <summary>
@@ -189,38 +152,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3>(Action<T1, T2, T3> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3)
+        public static void InvokeWithRetry<T1, T2, T3>(this Action<T1, T2, T3> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -241,9 +180,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, TResult>(Func<T1, T2, T3, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3)
+        public static TResult InvokeWithRetry<T1, T2, T3, TResult>(this Func<T1, T2, T3, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3);
 			return result;
 		}
 
@@ -266,38 +208,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, TResult>(Func<T1, T2, T3, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3)
+        public static TResult InvokeWithRetry<T1, T2, T3, TResult>(this Func<T1, T2, T3, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -319,9 +237,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static void InvokeWithRetry<T1, T2, T3, T4>(this Action<T1, T2, T3, T4> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4);
 		}
 
         /// <summary>
@@ -344,38 +265,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4>(Action<T1, T2, T3, T4> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static void InvokeWithRetry<T1, T2, T3, T4>(this Action<T1, T2, T3, T4> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -398,9 +295,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, TResult>(this Func<T1, T2, T3, T4, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4);
 			return result;
 		}
 
@@ -425,38 +325,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, TResult>(Func<T1, T2, T3, T4, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, TResult>(this Func<T1, T2, T3, T4, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -480,9 +356,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5>(this Action<T1, T2, T3, T4, T5> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5);
 		}
 
         /// <summary>
@@ -507,38 +386,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5>(Action<T1, T2, T3, T4, T5> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5>(this Action<T1, T2, T3, T4, T5> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -563,9 +418,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, TResult>(Func<T1, T2, T3, T4, T5, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, TResult>(this Func<T1, T2, T3, T4, T5, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5);
 			return result;
 		}
 
@@ -592,38 +450,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, TResult>(Func<T1, T2, T3, T4, T5, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, TResult>(this Func<T1, T2, T3, T4, T5, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -649,9 +483,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6>(this Action<T1, T2, T3, T4, T5, T6> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6);
 		}
 
         /// <summary>
@@ -678,38 +515,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6>(Action<T1, T2, T3, T4, T5, T6> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6>(this Action<T1, T2, T3, T4, T5, T6> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -736,9 +549,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, TResult>(Func<T1, T2, T3, T4, T5, T6, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, TResult>(this Func<T1, T2, T3, T4, T5, T6, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6);
 			return result;
 		}
 
@@ -767,38 +583,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, TResult>(Func<T1, T2, T3, T4, T5, T6, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, TResult>(this Func<T1, T2, T3, T4, T5, T6, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -826,9 +618,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7>(this Action<T1, T2, T3, T4, T5, T6, T7> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 		}
 
         /// <summary>
@@ -857,38 +652,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7>(Action<T1, T2, T3, T4, T5, T6, T7> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7>(this Action<T1, T2, T3, T4, T5, T6, T7> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -917,9 +688,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7);
 			return result;
 		}
 
@@ -950,38 +724,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -1011,9 +761,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8>(this Action<T1, T2, T3, T4, T5, T6, T7, T8> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 		}
 
         /// <summary>
@@ -1044,38 +797,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8>(Action<T1, T2, T3, T4, T5, T6, T7, T8> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8>(this Action<T1, T2, T3, T4, T5, T6, T7, T8> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -1106,9 +835,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
 			return result;
 		}
 
@@ -1141,38 +873,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -1204,9 +912,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 		}
 
         /// <summary>
@@ -1239,38 +950,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -1303,9 +990,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
 			return result;
 		}
 
@@ -1340,38 +1030,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -1405,9 +1071,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 		}
 
         /// <summary>
@@ -1442,38 +1111,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -1508,9 +1153,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
 			return result;
 		}
 
@@ -1547,38 +1195,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -1614,9 +1238,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 		}
 
         /// <summary>
@@ -1653,38 +1280,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -1721,9 +1324,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
 			return result;
 		}
 
@@ -1762,38 +1368,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -1831,9 +1413,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
 		}
 
         /// <summary>
@@ -1872,38 +1457,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -1942,9 +1503,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
 			return result;
 		}
 
@@ -1985,38 +1549,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -2056,9 +1596,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
 		}
 
         /// <summary>
@@ -2099,38 +1642,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -2171,9 +1690,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
 			return result;
 		}
 
@@ -2216,38 +1738,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -2289,9 +1787,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
 		}
 
         /// <summary>
@@ -2334,38 +1835,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -2408,9 +1885,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
 			return result;
 		}
 
@@ -2455,38 +1935,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -2530,9 +1986,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
 		}
 
         /// <summary>
@@ -2577,38 +2036,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -2653,9 +2088,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
 			return result;
 		}
 
@@ -2702,38 +2140,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
 
         /// <summary>
@@ -2779,9 +2193,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> action, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
         {
-		    Execute(action, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+
+		    InvokeWithRetry(action, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
 		}
 
         /// <summary>
@@ -2828,38 +2245,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static void Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> action, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
+        public static void InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16>(this Action<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16> action, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
 		{
-            if (action == null)
-            {
-                throw new ArgumentNullException("action");
-            }
+            Contract.Requires(action != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
-                    return;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+            Func<int> wrapper = () => { action(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16); return 0; };
+            int zero = InvokeWithRetry(wrapper, retryPolicy, cancel);
 	    }
 
         /// <summary>
@@ -2906,9 +2299,12 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult> function, RetryPolicy retryPolicy, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
         {
-		    TResult result = Execute(function, retryPolicy, NeverCancelled, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+
+		    TResult result = InvokeWithRetry(function, retryPolicy, CanNotCancel, arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
 			return result;
 		}
 
@@ -2957,38 +2353,14 @@ namespace Retryable
         /// <remarks>
         /// This method will block the current thread while retrying.
         /// </remarks>
-        public static TResult Execute<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult>(Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult> function, RetryPolicy retryPolicy, ManualResetEventSlim cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
+        public static TResult InvokeWithRetry<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult>(this Func<T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, T13, T14, T15, T16, TResult> function, RetryPolicy retryPolicy, WaitEvent cancel, T1 arg1, T2 arg2, T3 arg3, T4 arg4, T5 arg5, T6 arg6, T7 arg7, T8 arg8, T9 arg9, T10 arg10, T11 arg11, T12 arg12, T13 arg13, T14 arg14, T15 arg15, T16 arg16)
         {
-            if (function == null)
-            {
-                throw new ArgumentNullException("function");
-            }
+            Contract.Requires(function != null);
+            Contract.Requires(retryPolicy != null);
+            Contract.Requires(cancel != null);
 
-            if (retryPolicy == null)
-            {
-                throw new ArgumentNullException("retryPolicy");
-            }
-
-            if (cancel == null)
-            {
-                throw new ArgumentNullException("cancel");
-            }
-
-            for (int i = 0; /*forever*/; i++)
-            {
-                try
-                {
-                    TResult result = function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
-                    return result;
-                }
-                catch (Exception exception)
-                {
-                    if (!EvaluateRetryPolicyAndDelay(retryPolicy, i, exception, cancel))
-                    {
-                        throw;
-                    }
-                }
-            }
+		    Func<TResult> wrapper = () => function(arg1, arg2, arg3, arg4, arg5, arg6, arg7, arg8, arg9, arg10, arg11, arg12, arg13, arg14, arg15, arg16);
+            return InvokeWithRetry(wrapper, retryPolicy, cancel);
         }		
     }
 }

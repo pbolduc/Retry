@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics.Contracts;
 
 namespace Retryable
 {
@@ -12,56 +13,36 @@ namespace Retryable
         /// the service becomes available.
         /// </summary>
         /// <param name="retryCount">The retry count.</param>
-        /// <param name="minimumDelay">The minimum delay.</param>
-        /// <param name="maximumDelay">The maximum delay.</param>
+        /// <param name="minBackoff">The minimum delay.</param>
+        /// <param name="maxBackoff">The maximum delay.</param>
+        /// <param name="deltaBackoff"></param>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="retryCount"/>, <paramref name="minimumDelay"/> or
-        /// <paramref name="maximumDelay"/> are less then zero.
+        /// <paramref name="retryCount"/>, <paramref name="minBackoff"/> or
+        /// <paramref name="maxBackoff"/> are less then zero.
         /// </exception>
         /// <returns>
         /// A randomized timeout value based on the retry count. 
         /// </returns>
-        public static TimeSpan RandomExponential(int retryCount, int minimumDelay, int maximumDelay)
+        public static TimeSpan RandomExponential(int retryCount, TimeSpan minBackoff, TimeSpan maxBackoff, TimeSpan deltaBackoff)
         {
-            if (retryCount < 0)
-            {
-                throw new ArgumentOutOfRangeException("retryCount", retryCount, "Parameter retryCount cannot be less than zero.");
-            }
+            Contract.Requires(0 <= retryCount);
+            Contract.Requires(TimeSpan.Zero <= minBackoff && minBackoff <= TimeSpan.MaxValue);
+            Contract.Requires(TimeSpan.Zero <= maxBackoff && maxBackoff <= TimeSpan.MaxValue);
+            Contract.Requires(TimeSpan.Zero <= deltaBackoff && deltaBackoff <= TimeSpan.MaxValue);
 
-            if (minimumDelay < 0)
-            {
-                throw new ArgumentOutOfRangeException("minimumDelay", minimumDelay, "Parameter minimumDelay cannot be less than zero.");
-            }
-
-            if (maximumDelay < 0)
-            {
-                throw new ArgumentOutOfRangeException("maximumDelay", maximumDelay, "Parameter maximumDelay cannot be less than zero.");
-            }
+            Contract.Ensures(TimeSpan.Zero <= Contract.Result<TimeSpan>());
 
             // Seed the random number generator with new guid. This helps to prevent
-            // a 'thundering herd' of retries when a services becomes available.
-            Random random = new Random(Guid.NewGuid().GetHashCode());
+            // a 'thundering herd' of retries when a service becomes available again.
+            Random r = new Random(Guid.NewGuid().GetHashCode());
 
-            // Using power of two, the delays will be:
-            // Retry   Min   Max
-            //   0       0     1
-            //   1       1     4
-            //   2       4     9
-            //   3       9    16
-            //   4      16    25
-            //   5      25    36
-            //   6      36    49
-            //   7      49    64
-            //   8      64    81
-            //   9      81   100
-            //  10     100   121
-            int milliseconds = random.Next((int)Math.Pow(retryCount, 2) + minimumDelay, (int)Math.Pow(retryCount + 1, 2) + 1 + minimumDelay);
-            if (milliseconds > maximumDelay)
-            {
-                milliseconds = maximumDelay;
-            }
+            double increment = (Math.Pow(2, retryCount) - 1) * r.Next(
+                        (int)(deltaBackoff.TotalMilliseconds * 0.8), 
+                        (int)(deltaBackoff.TotalMilliseconds * 1.2));
+            int timeToSleepMsec = (int)Math.Min(minBackoff.TotalMilliseconds + increment, maxBackoff.TotalMilliseconds);
 
-            return TimeSpan.FromMilliseconds(milliseconds);
+            TimeSpan retryInterval = TimeSpan.FromMilliseconds(timeToSleepMsec);
+            return retryInterval;
         }
 
         /// <summary>
@@ -70,36 +51,29 @@ namespace Retryable
         /// the service becomes available.
         /// </summary>
         /// <param name="retryCount">The retry count.</param>
-        /// <param name="delay">The delay.</param>
+        /// <param name="minBackoff"></param>
+        /// <param name="maxBackoff"></param>
+        /// <param name="deltaBackoff"></param>
         /// <exception cref="ArgumentOutOfRangeException">
-        /// <paramref name="retryCount"/> or <paramref name="maximumDelay"/> are less then zero, or
+        /// <paramref name="retryCount"/>, <paramref name="maxBackoff"/> 
+        /// are less then zero, or
         /// <paramref name="delay"/> is less than or equal to zero.
         /// </exception>
         /// <returns></returns>
-        public static TimeSpan Linear(int retryCount, int delay, int maximumDelay)
+        public static TimeSpan Linear(int retryCount, TimeSpan minBackoff, TimeSpan maxBackoff, TimeSpan deltaBackoff)
         {
-            if (retryCount < 0)
-            {
-                throw new ArgumentOutOfRangeException("retryCount", retryCount, "Parameter retryCount cannot be less than zero.");
-            }
+            Contract.Requires(0 <= retryCount);
+            Contract.Requires(TimeSpan.Zero <= minBackoff && minBackoff <= TimeSpan.MaxValue);
+            Contract.Requires(TimeSpan.Zero <= maxBackoff && maxBackoff <= TimeSpan.MaxValue);
+            Contract.Requires(TimeSpan.Zero <= deltaBackoff && deltaBackoff <= TimeSpan.MaxValue);
 
-            if (delay <= 0)
-            {
-                throw new ArgumentOutOfRangeException("delay", delay, "Parameter delay cannot be less than or equal to zero.");
-            }
+            Contract.Ensures(TimeSpan.Zero <= Contract.Result<TimeSpan>());
 
-            if (maximumDelay < 0)
-            {
-                throw new ArgumentOutOfRangeException("maximumDelay", maximumDelay, "Parameter maximumDelay cannot be less than zero.");
-            }
+            double increment = retryCount * deltaBackoff.TotalMilliseconds;
+            int timeToSleepMsec = (int)Math.Min(minBackoff.TotalMilliseconds + increment, maxBackoff.TotalMilliseconds);
 
-            int milliseconds = (retryCount + 1) * delay;
-            if (milliseconds > maximumDelay)
-            {
-                milliseconds = maximumDelay;
-            }
-
-            return TimeSpan.FromMilliseconds(milliseconds);
+            TimeSpan retryInterval = TimeSpan.FromMilliseconds(timeToSleepMsec);
+            return retryInterval;
         }
     }
 }
