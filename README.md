@@ -16,8 +16,9 @@ Simple example with no retry:
             return false;
         };
     };
-
-    Retry.Execute(() => { /* some action to retry */ }, noRetryPolicy);
+	
+	Action action = () => { /* some action to retry */ };
+    action.InvokeWithRetry(noRetryPolicy);
 
 Simple example with 100ms delay between retries with up to 5 retries:
 
@@ -30,4 +31,19 @@ Simple example with 100ms delay between retries with up to 5 retries:
         };
     };
 
-    Retry.Execute(() => { /* some action to retry */ }, simpleRetryPolicy);
+	Action action = () => { /* some action to retry */ };
+    action.InvokeWithRetry(simpleRetryPolicy);
+
+	Func<int> func = () => { /* some action to retry */ return 0; };
+    int result = func.InvokeWithRetry(simpleRetryPolicy);
+
+You can also provide an ManualResetEventSlim to cancel any wait and throw the last error:
+
+	SqlConnection connection = ...
+    // try to open a connection to the database 	
+	Action action = connection.Open;
+    ManualResetEventSlim cancel = new ManualResetEventSlim(false);
+    action.InvokeWithRetry(retryPolicy, cancel);
+	
+	// on another thread, cancel any current executing wait
+	cancel.Set();

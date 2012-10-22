@@ -54,18 +54,41 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BackoffTests.cs" />
     <Compile Include="Operations.cs" />
+    <Compile Include="Operations.Generated.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Operations.tt</DependentUpon>
+    </Compile>
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RetryTests.cs" />
+    <Compile Include="RetryTests.Generated.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>RetryTests.tt</DependentUpon>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
+    <None Include="GenericTypeParameters.tt" />
+    <None Include="Operations.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>Operations.Generated.cs</LastGenOutput>
+    </None>
     <None Include="packages.config" />
+    <None Include="RetryTests.tt">
+      <Generator>TextTemplatingFileGenerator</Generator>
+      <LastGenOutput>RetryTests.Generated.cs</LastGenOutput>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Retryable.Core\Retryable.Core.csproj">
       <Project>{7bce360f-389f-48b4-8b02-d5bc8fa82c82}</Project>
       <Name>Retryable.Core</Name>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Service Include="{508349B6-6B84-4DF5-91F0-309BEEBAD82D}" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

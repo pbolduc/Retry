@@ -1,0 +1,44 @@
+﻿<#@ template debug="false" hostspecific="false" language="C#" #>
+<#@ output extension=".Generated.cs" #>
+<#@ assembly name="System.Core" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+
+using System;
+
+namespace Retryable.Tests
+{
+    public partial class Operations
+	{
+<# for (var typeCount = 2; typeCount <= GenericTypeMax; typeCount++) 
+{
+    var typeList = GetGenericList(typeCount, GenericTypeFormat);
+	var argumentList = GetGenericList(typeCount, GenericArgumentFormat);
+	var argsList = GetGenericList(typeCount, GenericArgumentsFormat);
+#>
+        /// <summary>
+        /// Gets a method that has <#= wordNumbers[typeCount-1] #> parameters and does not return a value.
+        /// </summary>
+        public Action<<#= typeList #>> GetAction<<#= typeList #>>()
+		{
+            Action<<#= typeList #>> action = (<#= argsList #>) => { Execute(); };
+            return action;
+		}
+
+        /// <summary>
+        /// Gets a method that has <#= wordNumbers[typeCount-1] #> parameters and returns a value of the type specified by the <typeparamref name="TReturn"/> parameter.
+        /// </summary>
+        public Func<<#= typeList #>, TReturn> GetFunc<<#= typeList #>, TReturn>()
+		{
+            Func<<#= typeList #>, TReturn> func = (<#= argsList #>) =>  { Execute(); return default(TReturn); };
+            return func;
+		}
+
+<#
+}
+#>
+	}
+}
+
+<#@ Include File="GenericTypeParameters.tt" #>

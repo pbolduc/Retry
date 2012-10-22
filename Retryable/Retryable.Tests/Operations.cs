@@ -54,41 +54,51 @@ namespace Retryable.Tests
             get { return this._throwCount; }
         }
 
+        /// <summary>
+        /// Gets a method that has no parameters and does not return a value.
+        /// </summary>
+        /// <returns></returns>
         public Action GetAction()
         {
-            Action action = () => this.Execute();
+            Action action = () => { Execute(); };
             return action;
         }
 
-        public Action<T> GetAction<T>()
-        {
-            Action<T> action = (arg) => this.Execute();
-            return action;
-        }
-
+        /// <summary>
+        /// Gets a method that has no parameters and returns a value of the type specified by the <typeparamref name="TReturn"/> parameter.
+        /// </summary>
+        /// <typeparam name="TReturn"></typeparam>
+        /// <returns></returns>
         public Func<TReturn> GetFunc<TReturn>()
         {
-            Func<TReturn> wrapper = () =>
-            {
-                this.Execute();
-                return default(TReturn);
-            };
-
+            Func<TReturn> wrapper = () => { Execute(); return default(TReturn); };
             return wrapper;
         }
 
+        /// <summary>
+        /// Gets a method that has a single parameter and does not return a value.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <returns></returns>
+        public Action<T> GetAction<T>()
+        {
+            Action<T> action = (arg) => { Execute(); };
+            return action;
+        }
+
+        /// <summary>
+        /// Gets a method that has one parameter and returns a value of the type specified by the <typeparamref name="TReturn"/> parameter.
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <typeparam name="TReturn"></typeparam>
+        /// <returns></returns>
         public Func<T, TReturn> GetFunc<T, TReturn>()
         {
-            Func<T, TReturn> wrapper = (arg) =>
-            {
-                this.Execute();
-                return default(TReturn);
-            };
-
+            Func<T, TReturn> wrapper = (arg) => { Execute(); return default(TReturn); };
             return wrapper;
         }
 
-        protected void Execute()
+        private void Execute()
         {
             if (this._executeCount++ < this._failCount)
             {
